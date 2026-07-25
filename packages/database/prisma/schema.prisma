@@ -1,0 +1,190 @@
+// Kisaniyat — Prisma schema
+//
+// DEV:  SQLite (zero-setup, runs immediately)  -> DATABASE_URL="file:./dev.db"
+// PROD: PostgreSQL / Neon                        -> change provider to "postgresql"
+//                                                   and set DATABASE_URL to your
+//                                                   Neon connection string.
+//
+// To switch to Postgres for production, set:
+//   datasource db { provider = "postgresql"  url = env("DATABASE_URL") }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  FARMER
+  ADMIN
+}
+
+enum FarmerCategory {
+  SMALL
+  MARGINAL
+  LARGE
+}
+
+enum SchemeLevel {
+  CENTRAL
+  STATE
+}
+
+enum SchemeStatus {
+  ACTIVE
+  CLOSING_SOON
+  CLOSED
+  UPCOMING
+}
+
+// ─────────────────────────── Users ───────────────────────────
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  phone          String?
+  state          String?
+  district       String?
+  occupation     String?
+  age            Int?
+  landArea       Float?
+  cropType       String?
+  incomeCategory String?
+  category       FarmerCategory?
+  role           Role            @default(FARMER)
+  avatar         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  bookmarks     Bookmark[]
+  notifications Notification[]
+  chats         ChatMessage[]
+  adminLogs     AdminLog[]
+}
+
+// ────────────────────────── Schemes ──────────────────────────
+model Scheme {
+  id                 String       @id @default(cuid())
+  slug               String       @unique
+  name               String
+  category           String
+  level              SchemeLevel
+  state              String?
+  description        String
+  eligibility        String // JSON-encoded string[]
+  benefits           String // JSON-encoded string[]
+  applicationProcess String // JSON-encoded string[]
+  requiredDocuments  String // JSON-encoded string[]
+  officialLink       String
+  status             SchemeStatus @default(ACTIVE)
+  deadline           DateTime?
+  isNew              Boolean      @default(false)
+  source             String // "Source: Official Government Portal"
+  sourceUrl          String
+  lastUpdated        DateTime     @default(now())
+  tags               String? // JSON-encoded string[]
+  createdAt          DateTime     @default(now())
+
+  bookmarks Bookmark[]
+
+  @@index([level])
+  @@index([status])
+}
+
+// ─────────────────────── Latest Updates ──────────────────────
+model GovUpdate {
+  id           String   @id @default(cuid())
+  title        String
+  summary      String
+  source       String
+  officialLink String
+  badge        String // NEW UPDATE | TODAY | RECENTLY ADDED | URGENT
+  externalId   String?  @unique // used to de-duplicate synced records
+  publishedAt  DateTime
+  createdAt    DateTime @default(now())
+}
+
+// ───────────────────────────── News ──────────────────────────
+model News {
+  id          String   @id @default(cuid())
+  headline    String
+  summary     String
+  image       String
+  category    String
+  source      String
+  url         String
+  publishedAt DateTime
+  createdAt   DateTime @default(now())
+}
+
+// ──────────────────────── Weather Cache ──────────────────────
+model WeatherCache {
+  id        String   @id @default(cuid())
+  location  String   @unique
+  payload   String // JSON-encoded Weather object
+  fetchedAt DateTime @default(now())
+}
+
+// ───────────────────────── Bookmarks ─────────────────────────
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  schemeId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheme Scheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, schemeId])
+}
+
+// ─────────────────────── Notifications ───────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String // scheme | deadline | update | weather | market
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────── Chat History ────────────────────────
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  role      String // user | assistant
+  content   String
+  lang      String   @default("en")
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ───────────────────────── Admin Logs ────────────────────────
+model AdminLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+// ───────────────────── Automation / Sync Logs ────────────────
+model AutomationLog {
+  id           String   @id @default(cuid())
+  source       String
+  recordsFound Int      @default(0)
+  status       String // success | skipped | error
+  message      String?
+  runAt        DateTime @default(now())
+}

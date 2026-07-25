@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Builds
+dist/
+build/
+out/
+.vite/
+
+# Env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+*/.env
+!**/.env.example
+
+# Prisma / SQLite dev database
+*.db
+*.db-journal
+packages/database/prisma/dev.db*
+packages/database/src/generated/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Coverage
+coverage/

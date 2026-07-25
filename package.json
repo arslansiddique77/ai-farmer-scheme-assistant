@@ -1,0 +1,27 @@
+{
+  "name": "kisaniyat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Farmer Scheme Assistant (Kisaniyat) — One Platform for Every Indian Farmer. Full-stack monorepo (web + api + database).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @kisaniyat/web",
+    "dev:web": "npm run dev --workspace @kisaniyat/web",
+    "dev:api": "npm run dev --workspace @kisaniyat/api",
+    "build": "npm run build --workspace @kisaniyat/web && npm run build --workspace @kisaniyat/api",
+    "build:web": "npm run build --workspace @kisaniyat/web",
+    "build:api": "npm run build --workspace @kisaniyat/api",
+    "db:generate": "npm run generate --workspace @kisaniyat/database",
+    "db:push": "npm run push --workspace @kisaniyat/database",
+    "db:migrate": "npm run migrate --workspace @kisaniyat/database",
+    "db:seed": "npm run seed --workspace @kisaniyat/database",
+    "test": "npm run test --workspace @kisaniyat/api",
+    "lint": "npm run lint --workspace @kisaniyat/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

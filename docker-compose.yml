@@ -1,0 +1,40 @@
+# Local full-stack via Docker: Postgres + API.
+# (Frontend is typically run with `npm run dev:web` or deployed to Vercel.)
+#
+# Usage:  docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kisaniyat
+      POSTGRES_PASSWORD: kisaniyat
+      POSTGRES_DB: kisaniyat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kisaniyat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      # NOTE: for Postgres, set schema.prisma provider to "postgresql"
+      DATABASE_URL: postgresql://kisaniyat:kisaniyat@db:5432/kisaniyat?schema=public
+      JWT_SECRET: local-dev-secret-change-me
+      CORS_ORIGIN: http://localhost:5173
+      ENABLE_CRON: "true"
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
